@@ -271,7 +271,7 @@ async function fetchAllIGViaApify() {
           byUser[uname].push({
             id:         item.shortCode,
             text:       item.caption || '',
-            image:      item.displayUrl || null,
+            image:      item.displayUrl ? `/api/imgproxy?url=${encodeURIComponent(item.displayUrl)}` : null,
             created_at: item.timestamp || null,
             url:        item.url || `https://www.instagram.com/p/${item.shortCode}/`,
             metrics:    { like_count: item.likesCount || 0, comments_count: item.commentsCount || 0 },
@@ -359,7 +359,13 @@ async function fetchIGAccount(username) {
 
     if (!batch || batch._creditsExhausted) return unavailable();
 
-    const posts = batch[username] || batch[username.toLowerCase()];
+    // Try exact match first, then partial match (handles slight username differences)
+    const key2 = username.toLowerCase();
+    let posts = batch[username] || batch[key2];
+    if (!posts) {
+      const closeKey = Object.keys(batch).find(k => k.includes(key2) || key2.includes(k));
+      if (closeKey) posts = batch[closeKey];
+    }
     if (posts && posts.length > 0) {
       const result = { account: { username, name: meta.name, avatar }, posts, source: 'apify' };
       setCacheWithTTL(key, result, IG_CACHE_TTL);
@@ -372,6 +378,34 @@ async function fetchIGAccount(username) {
   // 3. Nothing configured
   return unavailable('Add APIFY_TOKEN to your environment to enable Instagram.');
 }
+
+// ─── Image proxy — avoids Cross-Origin-Resource-Policy blocks on Instagram CDN ─
+const IG_CDN_HOSTS = ['cdninstagram.com', 'fbcdn.net'];
+
+app.get('/api/imgproxy', async (req, res) => {
+  const url = req.query.url;
+  try {
+    if (!url) return res.status(400).send('Missing url');
+    const parsed = new URL(url);
+    if (!IG_CDN_HOSTS.some(h => parsed.hostname.endsWith(h)))
+      return res.status(400).send('Disallowed host');
+
+    const upstream = await axios.get(url, {
+      responseType: 'stream',
+      timeout: 10000,
+      headers: {
+        'Referer':    'https://www.instagram.com/',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      },
+    });
+
+    res.setHeader('Content-Type', upstream.headers['content-type'] || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    upstream.data.pipe(res);
+  } catch {
+    res.status(502).send('Image unavailable');
+  }
+});
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.get('/api/x', async (req, res) => {
