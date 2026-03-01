@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UAE Official Updates</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- UAE flag stripe -->
+  <div class="flag-stripe" aria-hidden="true"></div>
+
+  <div id="app">
+
+    <!-- ── Header ──────────────────────────────────────────────────────── -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="brand">
+          <svg class="brand-emblem" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="24" cy="24" r="22" fill="#003087" stroke="#C09A2F" stroke-width="2"/>
+            <path d="M24 10 L28 20 L24 18 L20 20 Z" fill="#C09A2F"/>
+            <path d="M16 22 Q24 14 32 22 Q24 30 16 22Z" fill="#C09A2F" opacity="0.7"/>
+            <path d="M24 18 L24 38" stroke="#C09A2F" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18 26 L30 26" stroke="#C09A2F" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <div class="brand-text">
+            <span class="brand-title">UAE Official Updates</span>
+            <span class="brand-sub">Government Social Feed</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="live-badge" id="liveBadge">
+            <span class="live-dot"></span>
+            <span>Live</span>
+          </div>
+          <button class="icon-btn" id="refreshAllBtn" title="Refresh all feeds" aria-label="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Platform Toggle Bar ─────────────────────────────────────────── -->
+    <div class="platform-bar">
+      <div class="platform-bar-inner">
+        <div class="platform-toggle" role="tablist" aria-label="Select platform">
+          <button class="platform-btn active" data-platform="x" role="tab" aria-selected="true">
+            <!-- X logo -->
+            <svg class="platform-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.259 5.629 5.905-5.629zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            <span>X (Twitter)</span>
+          </button>
+
+          <button class="platform-btn" data-platform="instagram" role="tab" aria-selected="false">
+            <!-- Instagram logo -->
+            <svg class="platform-icon ig-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <defs>
+                <linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%"   stop-color="#f09433"/>
+                  <stop offset="33%"  stop-color="#e6683c"/>
+                  <stop offset="66%"  stop-color="#dc2743"/>
+                  <stop offset="100%" stop-color="#bc1888"/>
+                </linearGradient>
+              </defs>
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+            <span>Instagram</span>
+          </button>
+        </div>
+
+        <div class="feed-meta">
+          <span class="source-badge" id="sourceBadge"></span>
+          <span class="update-time" id="updateTime"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Main Content ────────────────────────────────────────────────── -->
+    <main class="main">
+      <div id="feedGrid" class="feed-grid platform-x"></div>
+    </main>
+
+    <!-- ── Footer ─────────────────────────────────────────────────────── -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <span>UAE Official Updates</span>
+        <span class="footer-sep">·</span>
+        <span>Data refreshes every 5 minutes</span>
+        <span class="footer-sep">·</span>
+        <span>Powered by official platform APIs</span>
+      </div>
+    </footer>
+
+  </div><!-- /#app -->
+
+  <script src="app.js"></script>
+</body>
+</html>
