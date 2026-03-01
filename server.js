@@ -316,7 +316,7 @@ app.delete('/api/cache/:platform/:username', (req, res) => {
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🇦🇪  UAE Gov Social Hub  →  http://localhost:${PORT}\n`);
   console.log(`   X source        : ${process.env.X_BEARER_TOKEN  ? '✅ X API v2'        : '📡 Nitter RSS (live, no key needed)'}`);
   console.log(`   Instagram source: ${process.env.IG_ACCESS_TOKEN ? '✅ Instagram API'   : '⚠️  no key — Instagram unavailable'}`);
