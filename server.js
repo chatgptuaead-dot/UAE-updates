@@ -6,18 +6,21 @@ const path    = require('path');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-const CACHE_TTL = parseInt(process.env.CACHE_TTL || '300000'); // 5 min
+const CACHE_TTL    = parseInt(process.env.CACHE_TTL || '300000');  // 5 min  (X)
+const IG_CACHE_TTL = 30 * 60 * 1000;                               // 30 min (Instagram — saves Apify credits)
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── Cache ────────────────────────────────────────────────────────────────────
+// ─── Cache (supports per-entry TTL) ──────────────────────────────────────────
 const cache = new Map();
 const getCached = key => {
   const e = cache.get(key);
-  return (e && Date.now() - e.ts < CACHE_TTL) ? e.data : null;
+  if (!e) return null;
+  return (Date.now() - e.ts < (e.ttl || CACHE_TTL)) ? e.data : null;
 };
-const setCache = (key, data) => cache.set(key, { data, ts: Date.now() });
+const setCache        = (key, data)      => cache.set(key, { data, ts: Date.now() });
+const setCacheWithTTL = (key, data, ttl) => cache.set(key, { data, ts: Date.now(), ttl });
 
 // ─── Account metadata ─────────────────────────────────────────────────────────
 const ACCOUNT_META = {
@@ -229,6 +232,72 @@ async function fetchXAccount(username) {
   };
 }
 
+// ─── Instagram — Apify batch scraper ─────────────────────────────────────────
+// All 9 accounts fetched in ONE Apify call to minimise credit usage.
+// Results cached for 30 minutes.
+
+let _apifyInFlight = null; // prevent concurrent duplicate calls
+
+async function fetchAllIGViaApify() {
+  const BATCH_KEY = 'ig_apify_batch';
+  const cached = getCached(BATCH_KEY);
+  if (cached) return cached;
+
+  if (_apifyInFlight) return _apifyInFlight; // deduplicate
+
+  _apifyInFlight = (async () => {
+    try {
+      const res = await axios.post(
+        'https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items',
+        {
+          directUrls:   IG_ACCOUNTS.map(u => `https://www.instagram.com/${u}/`),
+          resultsType:  'posts',
+          resultsLimit: 3,
+        },
+        {
+          params:  { token: process.env.APIFY_TOKEN, memory: 256, timeout: 60 },
+          timeout: 120_000,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      // Group posts by ownerUsername
+      const byUser = {};
+      for (const item of (res.data || [])) {
+        const uname = item.ownerUsername?.toLowerCase();
+        if (!uname) continue;
+        if (!byUser[uname]) byUser[uname] = [];
+        if (byUser[uname].length < 3) {
+          byUser[uname].push({
+            id:         item.shortCode,
+            text:       item.caption || '',
+            image:      item.displayUrl || null,
+            created_at: item.timestamp || null,
+            url:        item.url || `https://www.instagram.com/p/${item.shortCode}/`,
+            metrics:    { like_count: item.likesCount || 0, comments_count: item.commentsCount || 0 },
+            isLive:     true,
+            via:        'apify',
+          });
+        }
+      }
+
+      setCacheWithTTL(BATCH_KEY, byUser, IG_CACHE_TTL);
+      return byUser;
+    } catch (err) {
+      const status = err.response?.status;
+      // 402 = credits exhausted, 429 = rate limit
+      if (status === 402 || status === 429) {
+        console.warn('[Apify] Credits exhausted or rate limited');
+        return { _creditsExhausted: true };
+      }
+      console.error('[Apify]', err.response?.data?.error?.message || err.message);
+      return null;
+    }
+  })().finally(() => { _apifyInFlight = null; });
+
+  return _apifyInFlight;
+}
+
 // ─── Instagram ────────────────────────────────────────────────────────────────
 async function fetchIGAccount(username) {
   const key = `ig_${username}`;
@@ -236,8 +305,16 @@ async function fetchIGAccount(username) {
   if (cached) return cached;
 
   const meta = ACCOUNT_META[username] || { name: username };
+  const avatar = `https://unavatar.io/instagram/${username}`;
 
-  // Official Instagram Graph API
+  const unavailable = (msg = 'Unable to fetch data') => ({
+    account: { username, name: meta.name, avatar },
+    posts:   [],
+    source:  'unavailable',
+    error:   msg,
+  });
+
+  // 1. Official Instagram Graph API (if credentials are set)
   if (process.env.IG_ACCESS_TOKEN && process.env.IG_USER_IDS) {
     try {
       const userIds = JSON.parse(process.env.IG_USER_IDS);
@@ -267,11 +344,7 @@ async function fetchIGAccount(username) {
           via:        'api',
         }));
 
-        const result = {
-          account: { username, name: meta.name, avatar: `https://unavatar.io/instagram/${username}` },
-          posts,
-          source: 'api',
-        };
+        const result = { account: { username, name: meta.name, avatar }, posts, source: 'api' };
         setCache(key, result);
         return result;
       }
@@ -280,13 +353,24 @@ async function fetchIGAccount(username) {
     }
   }
 
-  // No Instagram credentials — tell the user clearly
-  return {
-    account: { username, name: meta.name, avatar: `https://unavatar.io/instagram/${username}` },
-    posts:   [],
-    source:  'unavailable',
-    error:   'Instagram requires API credentials. See .env.example for setup.',
-  };
+  // 2. Apify Instagram scraper
+  if (process.env.APIFY_TOKEN) {
+    const batch = await fetchAllIGViaApify();
+
+    if (!batch || batch._creditsExhausted) return unavailable();
+
+    const posts = batch[username] || batch[username.toLowerCase()];
+    if (posts && posts.length > 0) {
+      const result = { account: { username, name: meta.name, avatar }, posts, source: 'apify' };
+      setCacheWithTTL(key, result, IG_CACHE_TTL);
+      return result;
+    }
+
+    return unavailable();
+  }
+
+  // 3. Nothing configured
+  return unavailable('Add APIFY_TOKEN to your environment to enable Instagram.');
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
@@ -318,7 +402,7 @@ app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🇦🇪  UAE Gov Social Hub  →  http://localhost:${PORT}\n`);
-  console.log(`   X source        : ${process.env.X_BEARER_TOKEN  ? '✅ X API v2'        : '📡 Nitter RSS (live, no key needed)'}`);
-  console.log(`   Instagram source: ${process.env.IG_ACCESS_TOKEN ? '✅ Instagram API'   : '⚠️  no key — Instagram unavailable'}`);
-  console.log(`   Cache TTL       : ${CACHE_TTL / 1000}s\n`);
+  console.log(`   X source        : ${process.env.X_BEARER_TOKEN  ? '✅ X API v2'         : '📡 Nitter RSS (live, no key needed)'}`);
+  console.log(`   Instagram source: ${process.env.IG_ACCESS_TOKEN ? '✅ Instagram API'    : process.env.APIFY_TOKEN ? '✅ Apify scraper' : '⚠️  no key — Instagram unavailable'}`);
+  console.log(`   Cache TTL       : X=${CACHE_TTL/1000}s  Instagram=${IG_CACHE_TTL/1000}s\n`);
 });
