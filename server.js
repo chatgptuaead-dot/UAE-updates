@@ -47,8 +47,10 @@ const ACCOUNT_META = {
 
 const X_ACCOUNTS    = ['modgovae','moiuae','uaemediaoffice','wamnews','mofauae','dxbmediaoffice','admediaoffice','ncemauae','uaenma'];
 const IG_ACCOUNTS   = ['modgovae','moiuae','uaegov','wamnews','mofauae','dubaimediaoffice','admediaoffice','ncemauae','uaenma'];
-// News accounts ordered 1–8 as specified
-const NEWS_ACCOUNTS = ['modgovae','alarabiya','AJABreaking','AJArabic','IranTimes9','Reuters','khaleejtimes','UAE_Barq'];
+const NEWS_ACCOUNTS = [
+  'modgovae','wamnews','uaemediaoffice','dxbmediaoffice','admediaoffice','mofauae','ncemauae',
+  'alarabiya','AJABreaking','AJArabic','IranTimes9','Reuters','khaleejtimes','UAE_Barq',
+];
 
 // ─── RSS utilities ────────────────────────────────────────────────────────────
 async function parseRSS(xml) {

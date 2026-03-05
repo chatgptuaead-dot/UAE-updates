@@ -4,7 +4,7 @@
 
 class SocialHub {
   constructor() {
-    this.platform = 'x';
+    this.platform = 'news';
     this.cache    = {};
     this.loading  = false;
 
@@ -14,7 +14,7 @@ class SocialHub {
     this.$refreshBtn = document.getElementById('refreshAllBtn');
 
     this._bindEvents();
-    this._load('x');
+    this._load('news');
   }
 
   // ── Events ────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ class SocialHub {
     if (this.loading) return;
     this.loading = true;
     this._setSpinning(true);
-    this._renderSkeletons(platform === 'news' ? 8 : 9, platform === 'news' ? 2 : 3);
+    this._renderSkeletons(platform === 'news' ? 14 : 9, platform === 'news' ? 2 : 3);
 
     try {
       const endpoint = platform === 'x' ? '/api/x' : platform === 'instagram' ? '/api/instagram' : '/api/news';

@@ -51,7 +51,16 @@
     <div class="platform-bar">
       <div class="platform-bar-inner">
         <div class="platform-toggle" role="tablist" aria-label="Select platform">
-          <button class="platform-btn active" data-platform="x" role="tab" aria-selected="true">
+          <button class="platform-btn active" data-platform="news" role="tab" aria-selected="true">
+            <!-- News icon -->
+            <svg class="platform-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
+              <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>
+            </svg>
+            <span>News</span>
+          </button>
+
+          <button class="platform-btn" data-platform="x" role="tab" aria-selected="false">
             <!-- X logo -->
             <svg class="platform-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.741l7.73-8.835L1.254 2.25H8.08l4.259 5.629 5.905-5.629zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -75,14 +84,6 @@
             <span>Instagram</span>
           </button>
 
-          <button class="platform-btn" data-platform="news" role="tab" aria-selected="false">
-            <!-- Newspaper icon -->
-            <svg class="platform-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
-              <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>
-            </svg>
-            <span>News</span>
-          </button>
         </div>
 
         <div class="feed-meta">
@@ -94,7 +95,7 @@
 
     <!-- ── Main Content ────────────────────────────────────────────────── -->
     <main class="main">
-      <div id="feedGrid" class="feed-grid platform-x"></div>
+      <div id="feedGrid" class="feed-grid platform-news"></div>
     </main>
 
     <!-- ── Footer ─────────────────────────────────────────────────────── -->
