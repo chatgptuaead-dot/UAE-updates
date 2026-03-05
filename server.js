@@ -49,7 +49,7 @@ const X_ACCOUNTS    = ['modgovae','moiuae','uaemediaoffice','wamnews','mofauae',
 const IG_ACCOUNTS   = ['modgovae','moiuae','uaegov','wamnews','mofauae','dubaimediaoffice','admediaoffice','ncemauae','uaenma'];
 const NEWS_ACCOUNTS = [
   'modgovae','wamnews','uaemediaoffice','dxbmediaoffice','admediaoffice','mofauae','ncemauae',
-  'alarabiya','AJABreaking','AJArabic','IranTimes9','Reuters','khaleejtimes','UAE_Barq',
+  'alarabiya','AJABreaking','AJArabic','Reuters','khaleejtimes','UAE_Barq',
 ];
 
 // ─── RSS utilities ────────────────────────────────────────────────────────────
