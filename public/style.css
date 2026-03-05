@@ -275,56 +275,73 @@ body {
 @media (max-width: 1100px) { .feed-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width:  640px) { .feed-grid { grid-template-columns: 1fr; } }
 
-/* ── News vertical snap-scroll feed ──────────────────────────────────────── */
-/* When the news tab is active, lock the outer app to viewport height so     */
-/* only the feed-grid scrolls (one card per screen, like Instagram/YouTube). */
-#app:has(.platform-news) {
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-#app:has(.platform-news) .main {
-  flex: 1;
-  min-height: 0;
-  max-width: 100%;
-  padding: 0;
-  overflow: hidden;
-}
+/* ── News tab: desktop = normal grid, mobile = vertical snap feed ─────────── */
+.platform-news .account-card { border-top: 3px solid var(--news-color); }
 
-.platform-news.feed-grid {
-  display: flex;
-  flex-direction: column;
-  grid-template-columns: none;
-  height: 100%;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  -webkit-overflow-scrolling: touch;
-  gap: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.platform-news.feed-grid::-webkit-scrollbar { display: none; }
+@media (max-width: 767px) {
+  /* Lock viewport so only the feed scrolls */
+  #app:has(.platform-news) {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #app:has(.platform-news) .main {
+    flex: 1;
+    min-height: 0;
+    max-width: 100%;
+    padding: 0;
+    overflow: hidden;
+  }
 
-.platform-news .account-card {
-  flex: 0 0 100%;
-  height: 100%;
-  scroll-snap-align: start;
-  overflow-y: auto;
-  border-radius: 0;
-  box-shadow: none;
-  border-top: none;
-  border-left: 4px solid var(--news-color);
-  border-bottom: 1px solid var(--border);
-  max-width: 720px;
-  width: 100%;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-}
-.platform-news .account-card .posts-list {
-  flex: 1;
-  overflow-y: auto;
+  .platform-news.feed-grid {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    height: 100%;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .platform-news.feed-grid::-webkit-scrollbar { display: none; }
+
+  .platform-news .account-card {
+    flex: 0 0 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;   /* never skip a card */
+    overflow-y: hidden;
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 3px solid var(--news-color);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Make posts fill the card evenly */
+  .platform-news .posts-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .platform-news .post-item {
+    flex: 1;
+    min-height: 0;
+    padding: 16px 18px;
+  }
+  /* Remove text clamp — let it fill the space */
+  .platform-news .post-text {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    display: block;
+    font-size: 14px;
+  }
 }
 
 /* ── Account card ─────────────────────────────────────────────────────────── */
