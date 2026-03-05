@@ -52,10 +52,11 @@ class SocialHub {
     if (this.loading) return;
     this.loading = true;
     this._setSpinning(true);
-    this._renderSkeletons();
+    this._renderSkeletons(platform === 'news' ? 8 : 9, platform === 'news' ? 2 : 3);
 
     try {
-      const res  = await fetch(platform === 'x' ? '/api/x' : '/api/instagram');
+      const endpoint = platform === 'x' ? '/api/x' : platform === 'instagram' ? '/api/instagram' : '/api/news';
+      const res  = await fetch(endpoint);
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Server error');
 
@@ -86,9 +87,9 @@ class SocialHub {
     const card = document.createElement('article');
     card.className = 'account-card';
 
-    const profileUrl = this.platform === 'x'
-      ? `https://twitter.com/${account.username}`
-      : `https://instagram.com/${account.username}`;
+    const profileUrl = this.platform === 'instagram'
+      ? `https://instagram.com/${account.username}`
+      : `https://twitter.com/${account.username}`;
 
     const avatarFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&background=003087&color=fff&size=96&bold=true`;
 
@@ -125,9 +126,9 @@ class SocialHub {
     const card = document.createElement('article');
     card.className = 'account-card unavailable-card';
 
-    const profileUrl = this.platform === 'x'
-      ? `https://twitter.com/${account.username}`
-      : `https://instagram.com/${account.username}`;
+    const profileUrl = this.platform === 'instagram'
+      ? `https://instagram.com/${account.username}`
+      : `https://twitter.com/${account.username}`;
 
     const avatarFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&background=003087&color=fff&size=96&bold=true`;
 
@@ -192,7 +193,7 @@ class SocialHub {
   }
 
   // ── Skeletons ─────────────────────────────────────────────────────────────
-  _renderSkeletons(count = 9) {
+  _renderSkeletons(count = 9, postsPerCard = 3) {
     this.$grid.innerHTML = Array.from({ length: count }, () => `
       <article class="account-card skeleton-card" aria-hidden="true">
         <div class="account-header">
@@ -203,7 +204,7 @@ class SocialHub {
           </div>
         </div>
         <div class="posts-list">
-          ${Array.from({ length: 3 }, (_, i) => `
+          ${Array.from({ length: postsPerCard }, () => `
             <div class="post-item">
               <div class="post-row-top">
                 <div class="skeleton skeleton-num"></div>

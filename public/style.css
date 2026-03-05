@@ -24,6 +24,7 @@
   --x-color:       #000000;
   --ig-from:       #f09433;
   --ig-to:         #bc1888;
+  --news-color:    #c0392b;
 
   --r-sm:   8px;
   --r:      12px;
@@ -211,6 +212,7 @@ body {
 .platform-btn[data-platform="x"].active          { background: var(--x-color); color: #fff; box-shadow: var(--sh-sm); }
 .platform-btn[data-platform="instagram"].active  { background: linear-gradient(135deg, var(--ig-from), var(--ig-to)); color: #fff; box-shadow: var(--sh-sm); }
 .platform-btn[data-platform="instagram"].active .ig-icon { fill: #fff; }
+.platform-btn[data-platform="news"].active       { background: var(--news-color); color: #fff; box-shadow: var(--sh-sm); }
 
 .feed-meta { display: flex; align-items: center; gap: 10px; }
 
@@ -295,6 +297,7 @@ body {
 /* top accent bar per platform */
 .platform-x          .account-card { border-top: 3px solid #000; }
 .platform-instagram  .account-card { border-top: 3px solid var(--ig-from); }
+.platform-news       .account-card { border-top: 3px solid var(--news-color); }
 
 /* ── Account header ───────────────────────────────────────────────────────── */
 .account-header {

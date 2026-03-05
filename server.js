@@ -35,10 +35,20 @@ const ACCOUNT_META = {
   admediaoffice:    { name: 'Abu Dhabi Media Office'          },
   ncemauae:         { name: 'National Crisis & Emergency Mgmt'},
   uaenma:           { name: 'UAE National Media'              },
+  // News tab accounts
+  alarabiya:        { name: 'Al Arabiya'                      },
+  AJABreaking:      { name: 'Al Jazeera Breaking'             },
+  AJArabic:         { name: 'Al Jazeera Arabic'               },
+  IranTimes9:       { name: 'Iran Times'                      },
+  Reuters:          { name: 'Reuters'                         },
+  khaleejtimes:     { name: 'Khaleej Times'                   },
+  UAE_Barq:         { name: 'UAE Barq'                        },
 };
 
-const X_ACCOUNTS  = ['modgovae','moiuae','uaemediaoffice','wamnews','mofauae','dxbmediaoffice','admediaoffice','ncemauae','uaenma'];
-const IG_ACCOUNTS = ['modgovae','moiuae','uaegov','wamnews','mofauae','dubaimediaoffice','admediaoffice','ncemauae','uaenma'];
+const X_ACCOUNTS    = ['modgovae','moiuae','uaemediaoffice','wamnews','mofauae','dxbmediaoffice','admediaoffice','ncemauae','uaenma'];
+const IG_ACCOUNTS   = ['modgovae','moiuae','uaegov','wamnews','mofauae','dubaimediaoffice','admediaoffice','ncemauae','uaenma'];
+// News accounts ordered 1–8 as specified
+const NEWS_ACCOUNTS = ['modgovae','alarabiya','AJABreaking','AJArabic','IranTimes9','Reuters','khaleejtimes','UAE_Barq'];
 
 // ─── RSS utilities ────────────────────────────────────────────────────────────
 async function parseRSS(xml) {
@@ -411,6 +421,18 @@ app.get('/api/imgproxy', async (req, res) => {
 app.get('/api/x', async (req, res) => {
   try {
     const data = await Promise.all(X_ACCOUNTS.map(fetchXAccount));
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/news', async (req, res) => {
+  try {
+    const data = await Promise.all(NEWS_ACCOUNTS.map(async username => {
+      const result = await fetchXAccount(username);
+      return { ...result, posts: (result.posts || []).slice(0, 2) };
+    }));
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
