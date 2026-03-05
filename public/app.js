@@ -167,7 +167,7 @@ class SocialHub {
     const text    = this._truncate(post.text, 200);
     const metrics = post.metrics ? this._metricsHtml(post.metrics) : '';
 
-    const imageHtml = post.image ? `
+    const imageHtml = post.image && this.platform !== 'news' ? `
       <div class="post-image-wrap">
         <img class="post-image" src="${this._esc(post.image)}" alt="" loading="lazy"
              onerror="this.closest('.post-image-wrap').remove()" />
