@@ -264,16 +264,26 @@ body {
   padding: 28px 28px 56px;
 }
 
-/* ── Feed grid (now a single-column timeline) ────────────────────────────── */
+/* ── Feed grid ────────────────────────────────────────────────────────────── */
 .feed-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* News tab: single-column timeline on mobile, grid on desktop */
+.feed-grid.platform-news {
+  grid-template-columns: 1fr;
   max-width: 680px;
   margin: 0 auto;
 }
 
-/* ── Post card ────────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) { .feed-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width:  640px) { .feed-grid { grid-template-columns: 1fr; } }
+
+/* ── Shared card base ────────────────────────────────────────────────────── */
+.account-card,
 .post-card {
   background: var(--surface);
   border-radius: var(--r-lg);
@@ -285,6 +295,7 @@ body {
   transition: box-shadow var(--ease), transform var(--ease);
 }
 
+.account-card:hover,
 .post-card:hover { box-shadow: var(--sh); transform: translateY(-2px); }
 
 @keyframes card-in {
@@ -293,11 +304,24 @@ body {
 }
 
 /* top accent bar per platform */
+.platform-x          .account-card,
 .platform-x          .post-card { border-top: 3px solid #000; }
+.platform-instagram  .account-card,
 .platform-instagram  .post-card { border-top: 3px solid var(--ig-from); }
+.platform-news       .account-card,
 .platform-news       .post-card { border-top: 3px solid var(--news-color); }
 
-/* ── Post card source header ─────────────────────────────────────────────── */
+/* ── Account header (X / Instagram grouped cards) ────────────────────────── */
+.account-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px 12px;
+  border-bottom: 1px solid var(--border-faint);
+  background: var(--surface-alt);
+}
+
+/* ── Post card source header (News flat cards) ───────────────────────────── */
 .post-card-source {
   display: flex;
   align-items: center;
@@ -323,6 +347,67 @@ body {
 /* ── Post card body ──────────────────────────────────────────────────────── */
 .post-card-body {
   padding: 14px 16px 10px;
+}
+
+/* ── Posts list (X / Instagram) ──────────────────────────────────────────── */
+.posts-list { display: flex; flex-direction: column; }
+
+/* ── Post item (X / Instagram) ───────────────────────────────────────────── */
+.post-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 11px 14px;
+  min-height: 84px;
+  border-bottom: 1px solid var(--border-faint);
+  transition: background var(--ease);
+  gap: 8px;
+}
+
+.post-item:last-child { border-bottom: none; }
+.post-item:hover { background: var(--surface-alt); }
+
+.post-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--border-faint);
+  color: var(--text-muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.post-row-top { display: flex; align-items: flex-start; }
+
+/* ── Unavailable card ────────────────────────────────────────────────────── */
+.unavailable-card { opacity: 0.65; }
+
+.unavailable-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  gap: 8px;
+  text-align: center;
+}
+
+.unavailable-icon {
+  width: 28px; height: 28px;
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+
+.unavailable-msg {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 220px;
 }
 
 .account-avatar-wrap { position: relative; flex-shrink: 0; }
@@ -389,9 +474,25 @@ body {
 
 /* Post text */
 .post-text {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Grouped cards: clamp text */
+.post-item .post-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* News flat cards: slightly larger text */
+.post-card-body .post-text {
   font-size: 13.5px;
   line-height: 1.65;
-  color: var(--text-2);
 }
 
 .mention { color: var(--primary); font-weight: 500; }
@@ -423,6 +524,10 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+}
+
+/* Only add padding in flat news post-cards */
+.post-card > .post-footer {
   padding: 8px 16px 12px;
 }
 
@@ -496,6 +601,7 @@ body {
 .skeleton-card { pointer-events: none; opacity: 1 !important; animation: none !important; }
 .skeleton-avatar { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; }
 .skeleton-text   { height: 12px; width: 100%; margin-bottom: 7px; border-radius: 4px; }
+.skeleton-num    { width: 17px; height: 17px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; margin-top: 2px; }
 
 /* ── Error ────────────────────────────────────────────────────────────────── */
 .error-state {
