@@ -52,7 +52,7 @@ class SocialHub {
     if (this.loading) return;
     this.loading = true;
     this._setSpinning(true);
-    this._renderSkeletons(platform === 'news' ? 14 : 9, platform === 'news' ? 2 : 3);
+    this._renderSkeletons(8);
 
     try {
       const endpoint = platform === 'x' ? '/api/x' : platform === 'instagram' ? '/api/instagram' : '/api/news';
@@ -74,22 +74,45 @@ class SocialHub {
   // ── Render ────────────────────────────────────────────────────────────────
   _render(accounts) {
     this.$grid.innerHTML = '';
-    accounts.forEach((data, i) => {
-      const card = data.source === 'unavailable'
-        ? this._buildUnavailableCard(data)
-        : this._buildCard(data);
-      card.style.animationDelay = `${i * 50}ms`;
+
+    // Flatten all posts from all accounts, attaching source info to each
+    const allPosts = [];
+    accounts.forEach(data => {
+      if (data.source === 'unavailable') return;
+      const { account, posts, source } = data;
+      posts.forEach(post => {
+        allPosts.push({ post, account, source });
+      });
+    });
+
+    // Sort by recency (newest first)
+    allPosts.sort((a, b) => {
+      const da = a.post.created_at ? new Date(a.post.created_at).getTime() : 0;
+      const db = b.post.created_at ? new Date(b.post.created_at).getTime() : 0;
+      return db - da;
+    });
+
+    if (allPosts.length === 0) {
+      this._renderError('No posts available');
+      return;
+    }
+
+    allPosts.forEach((item, i) => {
+      const card = this._buildPostCard(item);
+      card.style.animationDelay = `${i * 40}ms`;
       this.$grid.appendChild(card);
     });
   }
 
-  _buildCard({ account, posts, source }) {
+  _buildPostCard({ post, account, source }) {
     const card = document.createElement('article');
-    card.className = 'account-card';
+    card.className = 'post-card';
 
     const profileUrl = this.platform === 'instagram'
       ? `https://instagram.com/${account.username}`
-      : `https://twitter.com/${account.username}`;
+      : this.platform === 'x'
+        ? `https://twitter.com/${account.username}`
+        : post.url || '#';
 
     const avatarFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&background=003087&color=fff&size=96&bold=true`;
 
@@ -97,74 +120,9 @@ class SocialHub {
       ? '<span class="source-tag rss-tag">RSS</span>'
       : '';
 
-    card.innerHTML = `
-      <div class="account-header">
-        <div class="account-avatar-wrap">
-          <img class="account-avatar"
-               src="${account.avatar || avatarFallback}"
-               alt="${this._esc(account.name)}"
-               loading="lazy"
-               onerror="this.onerror=null;this.src='${avatarFallback}'" />
-          ${account.verified ? '<span class="verified-badge" aria-label="Verified">✓</span>' : ''}
-        </div>
-        <div class="account-info">
-          <div class="account-name">${this._esc(account.name)} ${sourceLabel}</div>
-          <div class="account-username">@${this._esc(account.username)}</div>
-        </div>
-        <a class="account-link" href="${profileUrl}" target="_blank" rel="noopener noreferrer" aria-label="View profile">
-          ${this._extLinkSvg(14)}
-        </a>
-      </div>
-      <div class="posts-list">
-        ${posts.map((p, i) => this._buildPost(p, i)).join('')}
-      </div>`;
-
-    return card;
-  }
-
-  _buildUnavailableCard({ account, error }) {
-    const card = document.createElement('article');
-    card.className = 'account-card unavailable-card';
-
-    const profileUrl = this.platform === 'instagram'
-      ? `https://instagram.com/${account.username}`
-      : `https://twitter.com/${account.username}`;
-
-    const avatarFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&background=003087&color=fff&size=96&bold=true`;
-
-    card.innerHTML = `
-      <div class="account-header">
-        <div class="account-avatar-wrap">
-          <img class="account-avatar"
-               src="${account.avatar || avatarFallback}"
-               alt="${this._esc(account.name)}"
-               loading="lazy"
-               onerror="this.onerror=null;this.src='${avatarFallback}'" />
-        </div>
-        <div class="account-info">
-          <div class="account-name">${this._esc(account.name)}</div>
-          <div class="account-username">@${this._esc(account.username)}</div>
-        </div>
-        <a class="account-link" href="${profileUrl}" target="_blank" rel="noopener noreferrer">
-          ${this._extLinkSvg(14)}
-        </a>
-      </div>
-      <div class="unavailable-body">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="unavailable-icon">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <p class="unavailable-msg">${this._esc(error || 'Posts unavailable')}</p>
-      </div>`;
-
-    return card;
-  }
-
-  _buildPost(post, idx) {
     const time    = this._timeAgo(post.created_at);
     const absTime = post.created_at ? this._absTime(post.created_at) : '';
-    const text    = this._truncate(post.text, 200);
+    const text    = this._truncate(post.text, 280);
     const metrics = post.metrics ? this._metricsHtml(post.metrics) : '';
 
     const imageHtml = post.image && this.platform !== 'news' ? `
@@ -173,48 +131,57 @@ class SocialHub {
              onerror="this.closest('.post-image-wrap').remove()" />
       </div>` : '';
 
-    return `
-      <div class="post-item">
-        ${imageHtml}
-        <div class="post-row-top">
-          <span class="post-num">${idx + 1}</span>
-          <p class="post-text">${this._fmtText(text)}</p>
-        </div>
-        <div class="post-footer">
-          <div class="post-metrics">${metrics}</div>
-          <div class="post-meta">
-            <span class="post-time" title="${absTime}">${time}</span>
-            <a class="post-link" href="${this._esc(post.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open post">
-              ${this._extLinkSvg(12)}
-            </a>
+    card.innerHTML = `
+      <div class="post-card-source">
+        <a class="post-card-source-link" href="${profileUrl}" target="_blank" rel="noopener noreferrer">
+          <div class="account-avatar-wrap">
+            <img class="account-avatar"
+                 src="${account.avatar || avatarFallback}"
+                 alt="${this._esc(account.name)}"
+                 loading="lazy"
+                 onerror="this.onerror=null;this.src='${avatarFallback}'" />
+            ${account.verified ? '<span class="verified-badge" aria-label="Verified">✓</span>' : ''}
           </div>
+          <div class="account-info">
+            <div class="account-name">${this._esc(account.name)} ${sourceLabel}</div>
+            <div class="account-username">@${this._esc(account.username)}</div>
+          </div>
+        </a>
+        <span class="post-time" title="${absTime}">${time}</span>
+      </div>
+      ${imageHtml}
+      <div class="post-card-body">
+        <p class="post-text">${this._fmtText(text)}</p>
+      </div>
+      <div class="post-footer">
+        <div class="post-metrics">${metrics}</div>
+        <div class="post-meta">
+          <a class="post-link" href="${this._esc(post.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open post">
+            ${this._extLinkSvg(12)}
+          </a>
         </div>
       </div>`;
+
+    return card;
   }
 
   // ── Skeletons ─────────────────────────────────────────────────────────────
-  _renderSkeletons(count = 9, postsPerCard = 3) {
+  _renderSkeletons(count = 9) {
     this.$grid.innerHTML = Array.from({ length: count }, () => `
-      <article class="account-card skeleton-card" aria-hidden="true">
-        <div class="account-header">
-          <div class="skeleton skeleton-avatar"></div>
-          <div class="account-info" style="flex:1">
-            <div class="skeleton skeleton-text" style="width:65%;margin-bottom:6px"></div>
-            <div class="skeleton skeleton-text" style="width:40%"></div>
+      <article class="post-card skeleton-card" aria-hidden="true">
+        <div class="post-card-source">
+          <div style="display:flex;align-items:center;gap:10px;flex:1">
+            <div class="skeleton skeleton-avatar"></div>
+            <div style="flex:1">
+              <div class="skeleton skeleton-text" style="width:50%;margin-bottom:6px"></div>
+              <div class="skeleton skeleton-text" style="width:30%"></div>
+            </div>
           </div>
         </div>
-        <div class="posts-list">
-          ${Array.from({ length: postsPerCard }, () => `
-            <div class="post-item">
-              <div class="post-row-top">
-                <div class="skeleton skeleton-num"></div>
-                <div style="flex:1">
-                  <div class="skeleton skeleton-text"></div>
-                  <div class="skeleton skeleton-text" style="width:80%"></div>
-                  <div class="skeleton skeleton-text" style="width:55%"></div>
-                </div>
-              </div>
-            </div>`).join('')}
+        <div class="post-card-body">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text" style="width:85%"></div>
+          <div class="skeleton skeleton-text" style="width:60%"></div>
         </div>
       </article>`).join('');
   }
