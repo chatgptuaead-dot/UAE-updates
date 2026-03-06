@@ -52,7 +52,7 @@ class SocialHub {
     if (this.loading) return;
     this.loading = true;
     this._setSpinning(true);
-    this._renderSkeletons(8);
+    this._renderSkeletons(platform === 'news' ? 14 : 9, platform === 'news' ? 2 : 3);
 
     try {
       const endpoint = platform === 'x' ? '/api/x' : platform === 'instagram' ? '/api/instagram' : '/api/news';
@@ -74,45 +74,6 @@ class SocialHub {
   // ── Render ────────────────────────────────────────────────────────────────
   _render(accounts) {
     this.$grid.innerHTML = '';
-
-    if (this.platform === 'news') {
-      this._renderNews(accounts);
-    } else {
-      this._renderGrouped(accounts);
-    }
-  }
-
-  // News: flat chronological post-by-post
-  _renderNews(accounts) {
-    const allPosts = [];
-    accounts.forEach(data => {
-      if (data.source === 'unavailable') return;
-      const { account, posts, source } = data;
-      posts.forEach(post => {
-        allPosts.push({ post, account, source });
-      });
-    });
-
-    allPosts.sort((a, b) => {
-      const da = a.post.created_at ? new Date(a.post.created_at).getTime() : 0;
-      const db = b.post.created_at ? new Date(b.post.created_at).getTime() : 0;
-      return db - da;
-    });
-
-    if (allPosts.length === 0) {
-      this._renderError('No posts available');
-      return;
-    }
-
-    allPosts.forEach((item, i) => {
-      const card = this._buildPostCard(item);
-      card.style.animationDelay = `${i * 40}ms`;
-      this.$grid.appendChild(card);
-    });
-  }
-
-  // X / Instagram: grouped by account
-  _renderGrouped(accounts) {
     accounts.forEach((data, i) => {
       const card = data.source === 'unavailable'
         ? this._buildUnavailableCard(data)
@@ -120,56 +81,6 @@ class SocialHub {
       card.style.animationDelay = `${i * 50}ms`;
       this.$grid.appendChild(card);
     });
-  }
-
-  _buildPostCard({ post, account, source }) {
-    const card = document.createElement('article');
-    card.className = 'post-card';
-
-    const profileUrl = post.url || '#';
-
-    const avatarFallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(account.name)}&background=003087&color=fff&size=96&bold=true`;
-
-    const sourceLabel = source === 'rss'
-      ? '<span class="source-tag rss-tag">RSS</span>'
-      : '';
-
-    const time    = this._timeAgo(post.created_at);
-    const absTime = post.created_at ? this._absTime(post.created_at) : '';
-    const text    = this._truncate(post.text, 280);
-    const metrics = post.metrics ? this._metricsHtml(post.metrics) : '';
-
-    card.innerHTML = `
-      <div class="post-card-source">
-        <a class="post-card-source-link" href="${profileUrl}" target="_blank" rel="noopener noreferrer">
-          <div class="account-avatar-wrap">
-            <img class="account-avatar"
-                 src="${account.avatar || avatarFallback}"
-                 alt="${this._esc(account.name)}"
-                 loading="lazy"
-                 onerror="this.onerror=null;this.src='${avatarFallback}'" />
-            ${account.verified ? '<span class="verified-badge" aria-label="Verified">✓</span>' : ''}
-          </div>
-          <div class="account-info">
-            <div class="account-name">${this._esc(account.name)} ${sourceLabel}</div>
-            <div class="account-username">@${this._esc(account.username)}</div>
-          </div>
-        </a>
-        <span class="post-time" title="${absTime}">${time}</span>
-      </div>
-      <div class="post-card-body">
-        <p class="post-text">${this._fmtText(text)}</p>
-      </div>
-      <div class="post-footer">
-        <div class="post-metrics">${metrics}</div>
-        <div class="post-meta">
-          <a class="post-link" href="${this._esc(post.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open post">
-            ${this._extLinkSvg(12)}
-          </a>
-        </div>
-      </div>`;
-
-    return card;
   }
 
   _buildCard({ account, posts, source }) {
@@ -282,25 +193,8 @@ class SocialHub {
   }
 
   // ── Skeletons ─────────────────────────────────────────────────────────────
-  _renderSkeletons(count = 9) {
-    const isNews = this.platform === 'news';
-    this.$grid.innerHTML = Array.from({ length: count }, () => isNews ? `
-      <article class="post-card skeleton-card" aria-hidden="true">
-        <div class="post-card-source">
-          <div style="display:flex;align-items:center;gap:10px;flex:1">
-            <div class="skeleton skeleton-avatar"></div>
-            <div style="flex:1">
-              <div class="skeleton skeleton-text" style="width:50%;margin-bottom:6px"></div>
-              <div class="skeleton skeleton-text" style="width:30%"></div>
-            </div>
-          </div>
-        </div>
-        <div class="post-card-body">
-          <div class="skeleton skeleton-text"></div>
-          <div class="skeleton skeleton-text" style="width:85%"></div>
-          <div class="skeleton skeleton-text" style="width:60%"></div>
-        </div>
-      </article>` : `
+  _renderSkeletons(count = 9, postsPerCard = 3) {
+    this.$grid.innerHTML = Array.from({ length: count }, () => `
       <article class="account-card skeleton-card" aria-hidden="true">
         <div class="account-header">
           <div class="skeleton skeleton-avatar"></div>
@@ -310,7 +204,7 @@ class SocialHub {
           </div>
         </div>
         <div class="posts-list">
-          ${Array.from({ length: 3 }, () => `
+          ${Array.from({ length: postsPerCard }, () => `
             <div class="post-item">
               <div class="post-row-top">
                 <div class="skeleton skeleton-num"></div>
